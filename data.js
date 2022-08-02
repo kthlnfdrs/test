@@ -3,7 +3,7 @@ const fs = require('fs/promises');
 
 const { v4: generateId } = require('uuid');
 
-const dataStoragePath = path.join(__dirname, 'data-storage.json');
+const dataStoragePath = path.join('/demo', 'data', 'data-storage.json');
 
 async function loadStorageData() {
   const fileContent = await fs.readFile(dataStoragePath);
