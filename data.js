@@ -34,6 +34,8 @@ async function initDatabase() {
 }
 
 function addNewTopic(topicData) {
+  console.log('Adding topic');
+  console.log(topicData);
   return connection.execute(
     `
     INSERT INTO topics (title, user, statement)
@@ -44,6 +46,8 @@ function addNewTopic(topicData) {
 }
 
 function addNewOpinion(topicId, opinionData) {
+  console.log('Adding opinion');
+  console.log(topicId, opinionData);
   return connection.execute(
     `
     INSERT INTO opinions (title, user, text, topic_id)

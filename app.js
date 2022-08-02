@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const morgan = require('morgan');
 
 const {
   getTopics,
@@ -9,9 +10,13 @@ const {
   initDatabase,
 } = require('./data');
 
+const logger = morgan('combined');
+
 const app = express();
 
 app.set('view engine', 'ejs');
+
+app.use(logger);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static('public'));
