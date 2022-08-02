@@ -1,7 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
-const { getTopics, getTopic, addNewTopic, addNewOpinion } = require('./data');
+const {
+  getTopics,
+  getTopic,
+  addNewTopic,
+  addNewOpinion,
+  initDatabase,
+} = require('./data');
 
 const app = express();
 
@@ -43,4 +49,6 @@ app.post('/share-opinion', async function (req, res) {
   res.redirect(`/topics/${topicId}`);
 });
 
-app.listen(3000);
+initDatabase().then(function () {
+  app.listen(3000);
+});

@@ -1,57 +1,100 @@
-const path = require('path');
-const fs = require('fs/promises');
+const mysql = require('mysql2/promise');
 
-const { v4: generateId } = require('uuid');
+const connectionDetails = {
+  host: 'database-1.cvaxuuu43imt.us-east-1.rds.amazonaws.com',
+  user: 'admin',
+  password: 'Testers1!', // Typically, you don't want to save your PW in this file. Use SecretsManager instead.
+  database: 'discussit',
+};
 
-const dataStoragePath = path.join('/demo', 'data', 'data-storage.json');
+let connection;
 
-async function loadStorageData() {
-  const fileContent = await fs.readFile(dataStoragePath);
-  const data = JSON.parse(fileContent);
-  return data;
+async function initDatabase() {
+  connection = await mysql.createConnection(connectionDetails);
+
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS topics (
+      id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
+      user VARCHAR(255) NOT NULL,
+      statement TEXT NOT NULL
+    )
+  `);
+
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS opinions (
+      id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
+      user VARCHAR(255) NOT NULL,
+      text TEXT NOT NULL,
+      topic_id INT UNSIGNED,
+      FOREIGN KEY (topic_id) REFERENCES topics (id) ON DELETE CASCADE
+    )
+  `);
 }
 
-function saveStorageData(data) {
-  const content = JSON.stringify(data);
-  return fs.writeFile(dataStoragePath, content);
+function addNewTopic(topicData) {
+  return connection.execute(
+    `
+    INSERT INTO topics (title, user, statement)
+    VALUES (?, ?, ?)
+  `,
+    [topicData.title, topicData.user, topicData.statement]
+  );
 }
 
-async function addNewTopic(topicData) {
-  const newTopic = {
-    id: generateId(),
-    ...topicData,
-    opinions: [],
-  };
-  const data = await loadStorageData();
-  data.topics.unshift(newTopic); // unshift to add new topic at beginning
-  saveStorageData(data);
-}
-
-async function addNewOpinion(topicId, opinionData) {
-  console.log(opinionData);
-  const newOpinion = {
-    id: generateId(),
-    ...opinionData
-  };
-  const data = await loadStorageData();
-  const topicIndex = data.topics.findIndex((topic) => topic.id === topicId);
-  const topicData = data.topics[topicIndex];
-  topicData.opinions.unshift(newOpinion); // unshift to add new comment at beginning
-  saveStorageData(data);
+function addNewOpinion(topicId, opinionData) {
+  return connection.execute(
+    `
+    INSERT INTO opinions (title, user, text, topic_id)
+    VALUES (?, ?, ?, ?)
+  `,
+    [opinionData.title, opinionData.user, opinionData.text, topicId]
+  );
 }
 
 async function getTopics() {
-  const data = await loadStorageData();
-  const topics = data.topics.map((topic) => ({
-    id: topic.id,
-    title: topic.title,
-  }));
-  return topics;
+  const [rows] = await connection.execute(
+    `
+    SELECT * FROM topics ORDER BY id DESC
+  `
+  );
+
+  console.log(rows);
+
+  return rows;
 }
 
 async function getTopic(id) {
-  const data = await loadStorageData();
-  const topic = data.topics.find((topic) => topic.id === id);
+  const [rows] = await connection.execute(
+    `
+    SELECT t.id AS topic_id, t.title AS topic_title, t.statement AS topic_statement, t.user AS topic_user, o.id AS opinion_id, o.title AS opinion_title, o.user AS opinion_user, o.text AS opinion_text FROM topics t
+    LEFT JOIN opinions o
+    ON t.id = o.topic_id
+    WHERE t.id = ?
+  `,
+    [id]
+  );
+
+  const topic = {
+    id: rows[0].topic_id,
+    title: rows[0].topic_title,
+    statement: rows[0].topic_statement,
+    user: rows[0].topic_user,
+    opinions: [],
+  };
+
+  for (const row of rows) {
+    if (row.opinion_id) {
+      topic.opinions.push({
+        id: row.opinion_id,
+        title: row.opinion_title,
+        user: row.opinion_user,
+        text: row.opinion_text,
+      });
+    }
+  }
+
   return topic;
 }
 
@@ -59,3 +102,4 @@ exports.addNewTopic = addNewTopic;
 exports.addNewOpinion = addNewOpinion;
 exports.getTopics = getTopics;
 exports.getTopic = getTopic;
+exports.initDatabase = initDatabase;
