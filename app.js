@@ -1,3 +1,6 @@
+const path = require('path');
+const fs = require('fs');
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
@@ -10,7 +13,11 @@ const {
   initDatabase,
 } = require('./data');
 
-const logger = morgan('combined');
+const accessLogStream = fs.createWriteStream(
+  path.join('/var', 'log', 'website-logs', 'access.log'),
+  { flags: 'a' }
+);
+const logger = morgan('combined', { stream: accessLogStream });
 
 const app = express();
 
