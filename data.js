@@ -1,10 +1,10 @@
 const mysql = require('mysql2/promise');
 
 const connectionDetails = {
-  host: 'database-1.cvaxuuu43imt.us-east-1.rds.amazonaws.com',
-  user: 'admin',
-  password: 'Testers1!', // Typically, you don't want to save your PW in this file. Use SecretsManager instead.
-  database: 'discussit',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD, // Typically, you don't want to save your PW in this file. Use SecretsManager instead.
+  database: process.env.DB_NAME,
 };
 
 let connection;
